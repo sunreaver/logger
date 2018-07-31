@@ -18,7 +18,7 @@ const (
 )
 
 func (l Level) toZapcoreLevel() zapcore.LevelEnabler {
-	if l < DebugLevel || l > WarnLevel {
+	if l < DebugLevel || l > ErrorLevel {
 		return zapcore.DebugLevel
 	}
 	return zapcore.Level(l)
