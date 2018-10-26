@@ -1,6 +1,10 @@
 package logger
 
-import "go.uber.org/zap/zapcore"
+import (
+	"strings"
+
+	"go.uber.org/zap/zapcore"
+)
 
 // Level logger level
 type Level int8
@@ -42,14 +46,18 @@ func (l Level) toLevelString() LevelString {
 type LevelString string
 
 const (
+	// DebugStringLevel debug
 	DebugStringLevel LevelString = "debug"
-	InfoStringLevel  LevelString = "info"
-	WarnStringLevel  LevelString = "warn"
+	// InfoStringLevel info
+	InfoStringLevel LevelString = "info"
+	// WarnStringLevel warn
+	WarnStringLevel LevelString = "warn"
+	// ErrorStringLevel error
 	ErrorStringLevel LevelString = "error"
 )
 
 func (l LevelString) toLevel() Level {
-	switch l {
+	switch LevelString(strings.ToLower(string(l))) {
 	case DebugStringLevel:
 		return DebugLevel
 	case InfoStringLevel:
