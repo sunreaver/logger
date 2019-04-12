@@ -9,6 +9,46 @@ import (
 	"go.uber.org/zap"
 )
 
+// Logger Logger
+type Logger interface {
+	Debugw(msg string, kv ...interface{})
+	Infow(msg string, kv ...interface{})
+	Warnw(msg string, kv ...interface{})
+	Errorw(msg string, kv ...interface{})
+	Panicw(msg string, kv ...interface{})
+}
+
+// Empty empty logger
+var Empty = &emptyLogger{}
+
+type emptyLogger struct{}
+
+// Debugw Debugw
+func (e *emptyLogger) Debugw(_ string, _ ...interface{}) {
+	return
+}
+
+// Infow Infow
+func (e *emptyLogger) Infow(_ string, _ ...interface{}) {
+	return
+}
+
+// Warnw Warnw
+func (e *emptyLogger) Warnw(_ string, _ ...interface{}) {
+	return
+}
+
+// Errorw Errorw
+func (e *emptyLogger) Errorw(_ string, _ ...interface{}) {
+	return
+}
+
+// Panicw Panicw
+func (e *emptyLogger) Panicw(msg string, _ ...interface{}) {
+	panic(msg)
+	return
+}
+
 // Config logger config
 type Config struct {
 	Path     string
