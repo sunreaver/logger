@@ -1,15 +1,15 @@
 package logger
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"time"
 
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
-// Logger Logger
+// Logger Logger.
 type Logger interface {
 	Debugw(msg string, kv ...interface{})
 	Infow(msg string, kv ...interface{})
@@ -18,38 +18,33 @@ type Logger interface {
 	Panicw(msg string, kv ...interface{})
 }
 
-// Empty empty logger
+// Empty empty logger.
 var Empty = &emptyLogger{}
 
 type emptyLogger struct{}
 
-// Debugw Debugw
+// Debugw Debugw.
 func (e *emptyLogger) Debugw(_ string, _ ...interface{}) {
-	return
 }
 
-// Infow Infow
+// Infow Infow.
 func (e *emptyLogger) Infow(_ string, _ ...interface{}) {
-	return
 }
 
-// Warnw Warnw
+// Warnw Warnw.
 func (e *emptyLogger) Warnw(_ string, _ ...interface{}) {
-	return
 }
 
-// Errorw Errorw
+// Errorw Errorw.
 func (e *emptyLogger) Errorw(_ string, _ ...interface{}) {
-	return
 }
 
-// Panicw Panicw
+// Panicw Panicw.
 func (e *emptyLogger) Panicw(msg string, _ ...interface{}) {
 	panic(msg)
-	return
 }
 
-// Config logger config
+// Config logger config.
 type Config struct {
 	Path     string
 	Loglevel LevelString
@@ -57,10 +52,10 @@ type Config struct {
 	MaxSize int
 }
 
-// InitLoggerWithConfig 使用config初始化logger
+// InitLoggerWithConfig 使用config初始化logger.
 func InitLoggerWithConfig(cfg Config, location *time.Location) error {
-	if cfg.Path == "" {
-		cfg.Path = "./"
+	if len(cfg.Path) == 0 {
+		return errors.New("path empty")
 	}
 	if e := exists(cfg.Path); e != nil {
 		return e
@@ -97,18 +92,18 @@ func InitLoggerWithConfig(cfg Config, location *time.Location) error {
 	return nil
 }
 
-// InitLoggerWithLevel 使用String格式的level初始化logger
-// path 输出路径, 默认当前路径
-// logLevel 日志级别: debug,info,warn
-// location 日志文件名所属时区
+// InitLoggerWithLevel 使用String格式的level初始化logger.
+// path 输出路径, 默认当前路径.
+// logLevel 日志级别: debug,info,warn.
+// location 日志文件名所属时区.
 func InitLoggerWithLevel(path string, logLevel LevelString, location *time.Location) error {
 	return InitLogger(path, logLevel.toLevel(), location)
 }
 
-// InitLogger 初始化
-// path 输出路径, 默认当前路径
-// logLevel 日志级别
-// location 日志文件名所属时区
+// InitLogger 初始化.
+// path 输出路径, 默认当前路径.
+// logLevel 日志级别.
+// location 日志文件名所属时区.
 func InitLogger(path string, logLevel Level, location *time.Location) error {
 	return InitLoggerWithConfig(Config{
 		Path:     path,
@@ -117,17 +112,17 @@ func InitLogger(path string, logLevel Level, location *time.Location) error {
 	}, location)
 }
 
-// GetLogger to get logger
+// GetLogger to get logger.
 func GetLogger(name string) *zap.Logger {
 	return loggers.Get(name)
 }
 
-// GetSugarLogger to get SugaredLogger
+// GetSugarLogger to get SugaredLogger.
 func GetSugarLogger(name string) *zap.SugaredLogger {
 	return GetLogger(name).Sugar()
 }
 
-// FlushAndCloseLogger flush and close logger
+// FlushAndCloseLogger flush and close logger.
 func FlushAndCloseLogger(name string) error {
 	return loggers.Close(name)
 }
@@ -143,5 +138,6 @@ func exists(path string) error {
 	} else if stat == nil {
 		return errors.New("not directory: " + path)
 	}
+
 	return err
 }

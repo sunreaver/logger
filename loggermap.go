@@ -5,10 +5,9 @@ import (
 	"sync"
 	"time"
 
-	lumberjack "gopkg.in/natefinch/lumberjack.v2"
-
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 )
 
 type instance struct {
@@ -28,7 +27,7 @@ var (
 	}
 	config Config
 
-	// LoggerByDay 按照天来划分的logger
+	// LoggerByDay 按照天来划分的logger.
 	LoggerByDay *zap.SugaredLogger
 )
 
@@ -46,19 +45,21 @@ func (l *loggerMap) Close(name string) error {
 	_, ok := l.instances[name]
 	l.lock.RUnlock()
 
+	if !ok {
+		return nil
+	}
+
+	l.lock.Lock()
+	defer l.lock.Unlock()
+	i, ok := l.instances[name]
 	if ok {
-		l.lock.Lock()
-		defer l.lock.Unlock()
-		i, ok := l.instances[name]
-		if ok {
-			if e := i.logger.Sync(); e != nil {
-				return e
-			}
-			if e := i.writer.Close(); e != nil {
-				return e
-			}
-			delete(l.instances, name)
+		if e := i.logger.Sync(); e != nil {
+			return e
 		}
+		if e := i.writer.Close(); e != nil {
+			return e
+		}
+		delete(l.instances, name)
 	}
 
 	return nil
@@ -72,7 +73,7 @@ func (l *loggerMap) Get(name string) *zap.Logger {
 	if !ok {
 		writer := &lumberjack.Logger{
 			Filename: path.Join(config.Path, name),
-			MaxSize:  int(config.MaxSize),
+			MaxSize:  config.MaxSize,
 		}
 		ws := zapcore.AddSync(writer)
 		cfg := zapcore.EncoderConfig{
@@ -104,10 +105,11 @@ func (l *loggerMap) Get(name string) *zap.Logger {
 		}
 		l.lock.Unlock()
 	}
+
 	return i.logger
 }
 
-// ToEarlyMorningTimeDuration will 计算当前到第二日凌晨的时间
+// ToEarlyMorningTimeDuration will 计算当前到第二日凌晨的时间.
 func ToEarlyMorningTimeDuration(now time.Time) time.Duration {
 	hour := 24 - now.Hour() - 1
 	minute := 60 - now.Minute() - 1

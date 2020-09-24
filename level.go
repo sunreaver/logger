@@ -6,7 +6,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// Level logger level
+// Level logger level.
 type Level int8
 
 const (
@@ -25,6 +25,7 @@ func (l Level) toZapcoreLevel() zapcore.LevelEnabler {
 	if l < DebugLevel || l > ErrorLevel {
 		return zapcore.DebugLevel
 	}
+
 	return zapcore.Level(l)
 }
 
@@ -39,20 +40,21 @@ func (l Level) toLevelString() LevelString {
 	case ErrorLevel:
 		return ErrorStringLevel
 	}
+
 	return ErrorStringLevel
 }
 
-// LevelString 字符串格式的Level
+// LevelString 字符串格式的Level.
 type LevelString string
 
 const (
-	// DebugStringLevel debug
+	// DebugStringLevel debug.
 	DebugStringLevel LevelString = "debug"
-	// InfoStringLevel info
+	// InfoStringLevel info.
 	InfoStringLevel LevelString = "info"
-	// WarnStringLevel warn
+	// WarnStringLevel warn.
 	WarnStringLevel LevelString = "warn"
-	// ErrorStringLevel error
+	// ErrorStringLevel error.
 	ErrorStringLevel LevelString = "error"
 )
 
@@ -67,6 +69,7 @@ func (l LevelString) toLevel() Level {
 	case ErrorStringLevel:
 		return ErrorLevel
 	}
+
 	return DebugLevel
 }
 
