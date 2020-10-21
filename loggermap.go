@@ -1,9 +1,6 @@
 package logger
 
 import (
-	"fmt"
-	"github.com/Shopify/sarama"
-	"os"
 	"path"
 	"sync"
 	"time"
@@ -94,26 +91,6 @@ func (l *loggerMap) Get(name string) *zap.Logger {
 		}
 		//
 		if config.EnableKafka {
-			var (
-				kl  KafkaLogger
-				err error
-			)
-			// 设置日志输入到Kafka的配置
-			kf := sarama.NewConfig()
-			//等待服务器所有副本都保存成功后的响应
-			kf.Producer.RequiredAcks = sarama.WaitForAll
-			//随机的分区类型
-			kf.Producer.Partitioner = sarama.NewRandomPartitioner
-			//是否等待成功和失败后的响应,只有上面的RequireAcks设置不是NoReponse这里才有用.
-			kf.Producer.Return.Successes = true
-			kf.Producer.Return.Errors = true
-
-			kl.Topic = config.KafkaConfig.Topic
-			kl.Producer, err = sarama.NewSyncProducer(config.KafkaConfig.Address, kf)
-			if err != nil {
-				fmt.Printf("connect kafka failed: %+v\n", err)
-				os.Exit(-1)
-			}
 			topicErrors := zapcore.AddSync(&kl)
 			kafkaEncoder := zapcore.NewJSONEncoder(cfg)
 			allCore = append(allCore, zapcore.NewCore(kafkaEncoder, topicErrors, config.Loglevel.toZapcoreLevel()))
