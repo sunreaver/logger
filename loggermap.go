@@ -71,6 +71,8 @@ func (l *loggerMap) Get(name string) *zap.Logger {
 	l.lock.RUnlock()
 
 	if !ok {
+		var allCore []zapcore.Core
+
 		writer := &lumberjack.Logger{
 			Filename: path.Join(config.Path, name),
 			MaxSize:  config.MaxSize,
@@ -87,11 +89,17 @@ func (l *loggerMap) Get(name string) *zap.Logger {
 			EncodeTime:     localTimeEncoder,
 			EncodeDuration: zapcore.NanosDurationEncoder,
 		}
-		logger := zap.New(zapcore.NewCore(
-			zapcore.NewJSONEncoder(cfg),
-			ws,
-			config.Loglevel.toZapcoreLevel(),
-		))
+		//
+		if config.EnableKafka {
+			topicErrors := zapcore.AddSync(&kl)
+			kafkaEncoder := zapcore.NewJSONEncoder(cfg)
+			allCore = append(allCore, zapcore.NewCore(kafkaEncoder, topicErrors, config.Loglevel.toZapcoreLevel()))
+		}
+		allCore = append(allCore, zapcore.NewCore(zapcore.NewJSONEncoder(cfg), ws, config.Loglevel.toZapcoreLevel()))
+		//
+		logger := zap.New(
+			zapcore.NewTee(allCore...),
+		)
 		i = instance{
 			logger: logger,
 			writer: writer,

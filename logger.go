@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"github.com/Shopify/sarama"
 	"os"
 	"time"
 
@@ -18,8 +19,11 @@ type Logger interface {
 	Panicw(msg string, kv ...interface{})
 }
 
-// Empty empty logger.
-var Empty = &emptyLogger{}
+var (
+	// Empty empty logger.
+	Empty = &emptyLogger{}
+	kl    KafkaLogger
+)
 
 type emptyLogger struct{}
 
@@ -50,6 +54,16 @@ type Config struct {
 	Loglevel LevelString
 	// MaxSize 单文件最大存储，单位MB
 	MaxSize int
+	// 是否开启kafka
+	EnableKafka bool
+	// kafka配置文件
+	KafkaConfig KafkaConfig
+}
+
+type KafkaConfig struct {
+	Address []string
+	Ack     int16
+	Topic   string
 }
 
 // InitLoggerWithConfig 使用config初始化logger.
@@ -62,6 +76,21 @@ func InitLoggerWithConfig(cfg Config, location *time.Location) error {
 	} else if cfg.MaxSize <= 0 {
 		return errors.New("MaxSize must be large than zero")
 	}
+	// init kafka
+	if cfg.EnableKafka {
+		if cfg.KafkaConfig.Topic == "" {
+			return errors.New("Kafka Topic empty")
+		} else if len(cfg.KafkaConfig.Address) == 0 {
+			return errors.New("Kafka Address empty")
+		} else if cfg.KafkaConfig.Ack > 1 || cfg.KafkaConfig.Ack < -1 {
+			return errors.New("Unknown kafka Ack flag")
+		}
+		//
+		if err := initKafka(&cfg); err != nil {
+			return err
+		}
+	}
+
 	config = cfg
 
 	// Fix time offset for Local
@@ -89,6 +118,26 @@ func InitLoggerWithConfig(cfg Config, location *time.Location) error {
 		}
 	}()
 
+	return nil
+}
+
+func initKafka(c *Config) error {
+	// 设置日志输入到Kafka的配置
+	kf := sarama.NewConfig()
+	//等待服务器所有副本都保存成功后的响应
+	kf.Producer.RequiredAcks = sarama.RequiredAcks(c.KafkaConfig.Ack)
+	//随机的分区类型
+	kf.Producer.Partitioner = sarama.NewRandomPartitioner
+	//是否等待成功和失败后的响应,只有上面的RequireAcks设置不是NoReponse这里才有用.
+	kf.Producer.Return.Successes = true
+	kf.Producer.Return.Errors = true
+
+	p, err := sarama.NewSyncProducer(c.KafkaConfig.Address, kf)
+	if err != nil {
+		return errors.New(fmt.Sprintf("connect kafka failed: %+v\n", err))
+	}
+	kl.Topic = c.KafkaConfig.Topic
+	kl.Producer = p
 	return nil
 }
 
