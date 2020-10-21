@@ -3,6 +3,7 @@ package logger
 import (
 	"fmt"
 	"github.com/Shopify/sarama"
+	"github.com/sunreaver/tomlanalysis/bytesize"
 	"os"
 	"time"
 
@@ -49,25 +50,25 @@ func (e *emptyLogger) Panicw(msg string, _ ...interface{}) {
 }
 
 // Config logger config.
-type Config struct {
-	Path     string
-	Loglevel LevelString
+type LogConfig struct {
+	Path     string      `toml:"path"`
+	Loglevel LevelString `toml:"level"`
 	// MaxSize 单文件最大存储，单位MB
-	MaxSize int
+	MaxSize bytesize.Int64 `toml:"max_size_one_file"`
 	// 是否开启kafka
-	EnableKafka bool
+	EnableKafka bool `toml:"enable_kafka"`
 	// kafka配置文件
-	KafkaConfig KafkaConfig
+	KafkaConfig KafkaConfig `toml:"kafka"`
 }
 
 type KafkaConfig struct {
-	Address []string
-	Ack     int16
-	Topic   string
+	Address []string `toml:"kafka_address"`
+	Ack     int16    `toml:"kafka_ack"`
+	Topic   string   `toml:"kafka_topic"`
 }
 
 // InitLoggerWithConfig 使用config初始化logger.
-func InitLoggerWithConfig(cfg Config, location *time.Location) error {
+func InitLoggerWithConfig(cfg LogConfig, location *time.Location) error {
 	if len(cfg.Path) == 0 {
 		return errors.New("path empty")
 	}
@@ -121,7 +122,7 @@ func InitLoggerWithConfig(cfg Config, location *time.Location) error {
 	return nil
 }
 
-func initKafka(c *Config) error {
+func initKafka(c *LogConfig) error {
 	// 设置日志输入到Kafka的配置
 	kf := sarama.NewConfig()
 	//等待服务器所有副本都保存成功后的响应
@@ -154,7 +155,7 @@ func InitLoggerWithLevel(path string, logLevel LevelString, location *time.Locat
 // logLevel 日志级别.
 // location 日志文件名所属时区.
 func InitLogger(path string, logLevel Level, location *time.Location) error {
-	return InitLoggerWithConfig(Config{
+	return InitLoggerWithConfig(LogConfig{
 		Path:     path,
 		Loglevel: logLevel.toLevelString(),
 		MaxSize:  1024,

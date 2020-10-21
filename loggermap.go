@@ -25,7 +25,7 @@ var (
 		new(sync.RWMutex),
 		make(map[string]instance),
 	}
-	config Config
+	config LogConfig
 
 	// LoggerByDay 按照天来划分的logger.
 	LoggerByDay *zap.SugaredLogger
@@ -75,7 +75,7 @@ func (l *loggerMap) Get(name string) *zap.Logger {
 
 		writer := &lumberjack.Logger{
 			Filename: path.Join(config.Path, name),
-			MaxSize:  config.MaxSize,
+			MaxSize:  config.MaxSize.AsInt(),
 		}
 		ws := zapcore.AddSync(writer)
 		cfg := zapcore.EncoderConfig{
