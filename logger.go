@@ -50,6 +50,15 @@ type Config struct {
 	Loglevel LevelString
 	// MaxSize 单文件最大存储，单位MB
 	MaxSize int
+	// 是否开启kafka
+	EnableKafka bool
+	// kafka配置文件
+	KafkaConfig KafkaConfig
+}
+
+type KafkaConfig struct {
+	Address []string
+	Topic   string
 }
 
 // InitLoggerWithConfig 使用config初始化logger.
