@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+
 	"github.com/Shopify/sarama"
 )
 
@@ -17,8 +18,9 @@ func (lk *KafkaLogger) Write(p []byte) (n int, err error) {
 	_, _, err = lk.Producer.SendMessage(msg)
 	if err != nil {
 		fmt.Println(err.Error())
+
 		return
 	}
-	return
 
+	return
 }

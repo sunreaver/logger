@@ -63,9 +63,12 @@ type LogConfig struct {
 }
 
 type KafkaConfig struct {
-	Address []string `toml:"kafka_address"`
-	Ack     int16    `toml:"kafka_ack"`
-	Topic   string   `toml:"kafka_topic"`
+	ClientID   string   `toml:"client_id"`
+	RackID     string   `toml:"rack_id"`
+	BufferSize int      `toml:"buf_size"`
+	Address    []string `toml:"address"`
+	Ack        int16    `toml:"ack"`
+	Topic      string   `toml:"topic"`
 }
 
 // InitLoggerWithConfig 使用config初始化logger.
@@ -126,6 +129,12 @@ func InitLoggerWithConfig(cfg LogConfig, location *time.Location) error {
 func initKafka(c *LogConfig) error {
 	// 设置日志输入到Kafka的配置
 	kf := sarama.NewConfig()
+	kf.ClientID = c.KafkaConfig.ClientID
+	if c.KafkaConfig.BufferSize > 0 {
+		kf.ChannelBufferSize = c.KafkaConfig.BufferSize
+	}
+	kf.RackID = c.KafkaConfig.RackID
+
 	// 等待服务器所有副本都保存成功后的响应
 	kf.Producer.RequiredAcks = sarama.RequiredAcks(c.KafkaConfig.Ack)
 	// 随机的分区类型
