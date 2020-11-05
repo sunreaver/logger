@@ -2,12 +2,13 @@ package logger
 
 import (
 	"fmt"
-	"github.com/Shopify/sarama"
-	"github.com/sunreaver/tomlanalysis/bytesize"
+	"log"
 	"os"
 	"time"
 
+	"github.com/Shopify/sarama"
 	"github.com/pkg/errors"
+	"github.com/sunreaver/tomlanalysis/bytesize"
 	"go.uber.org/zap"
 )
 
@@ -125,13 +126,15 @@ func InitLoggerWithConfig(cfg LogConfig, location *time.Location) error {
 func initKafka(c *LogConfig) error {
 	// 设置日志输入到Kafka的配置
 	kf := sarama.NewConfig()
-	//等待服务器所有副本都保存成功后的响应
+	// 等待服务器所有副本都保存成功后的响应
 	kf.Producer.RequiredAcks = sarama.RequiredAcks(c.KafkaConfig.Ack)
-	//随机的分区类型
+	// 随机的分区类型
 	kf.Producer.Partitioner = sarama.NewRandomPartitioner
-	//是否等待成功和失败后的响应,只有上面的RequireAcks设置不是NoReponse这里才有用.
+	// 是否等待成功和失败后的响应,只有上面的RequireAcks设置不是NoReponse这里才有用.
 	kf.Producer.Return.Successes = true
 	kf.Producer.Return.Errors = true
+
+	sarama.Logger = log.New(os.Stdout, "[sarama] ", log.LstdFlags)
 
 	p, err := sarama.NewSyncProducer(c.KafkaConfig.Address, kf)
 	if err != nil {
@@ -139,6 +142,7 @@ func initKafka(c *LogConfig) error {
 	}
 	kl.Topic = c.KafkaConfig.Topic
 	kl.Producer = p
+
 	return nil
 }
 
