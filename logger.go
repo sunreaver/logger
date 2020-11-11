@@ -62,15 +62,6 @@ type LogConfig struct {
 	KafkaConfig KafkaConfig `toml:"kafka"`
 }
 
-type KafkaConfig struct {
-	ClientID   string   `toml:"client_id"`
-	RackID     string   `toml:"rack_id"`
-	BufferSize int      `toml:"buf_size"`
-	Address    []string `toml:"address"`
-	Ack        int16    `toml:"ack"`
-	Topic      string   `toml:"topic"`
-}
-
 // InitLoggerWithConfig 使用config初始化logger.
 func InitLoggerWithConfig(cfg LogConfig, location *time.Location) error {
 	if len(cfg.Path) == 0 {
@@ -142,6 +133,11 @@ func initKafka(c *LogConfig) error {
 	// 是否等待成功和失败后的响应,只有上面的RequireAcks设置不是NoReponse这里才有用.
 	kf.Producer.Return.Successes = true
 	kf.Producer.Return.Errors = true
+	version, err := sarama.ParseKafkaVersion(c.KafkaConfig.Version)
+	if err != nil {
+		return errors.Wrap(err, "kafka version")
+	}
+	kf.Version = version
 
 	sarama.Logger = log.New(os.Stdout, "[sarama] ", log.LstdFlags)
 
@@ -169,9 +165,11 @@ func InitLoggerWithLevel(path string, logLevel LevelString, location *time.Locat
 // location 日志文件名所属时区.
 func InitLogger(path string, logLevel Level, location *time.Location) error {
 	return InitLoggerWithConfig(LogConfig{
-		Path:     path,
-		Loglevel: logLevel.toLevelString(),
-		MaxSize:  1024,
+		Path:        path,
+		Loglevel:    logLevel.toLevelString(),
+		MaxSize:     1024,
+		EnableKafka: false,
+		KafkaConfig: KafkaConfig{},
 	}, location)
 }
 
@@ -202,5 +200,5 @@ func exists(path string) error {
 		return errors.New("not directory: " + path)
 	}
 
-	return err
+	return errors.Wrap(err, "path exists")
 }

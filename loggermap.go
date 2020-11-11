@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
@@ -54,10 +55,10 @@ func (l *loggerMap) Close(name string) error {
 	i, ok := l.instances[name]
 	if ok {
 		if e := i.logger.Sync(); e != nil {
-			return e
+			return errors.Wrap(e, "logger sync")
 		}
 		if e := i.writer.Close(); e != nil {
-			return e
+			return errors.Wrap(e, "writer close")
 		}
 		delete(l.instances, name)
 	}

@@ -6,6 +6,16 @@ import (
 	"github.com/Shopify/sarama"
 )
 
+type KafkaConfig struct {
+	ClientID   string   `toml:"client_id"`
+	RackID     string   `toml:"rack_id"`
+	BufferSize int      `toml:"buf_size"`
+	Address    []string `toml:"address"`
+	Ack        int16    `toml:"ack"`
+	Topic      string   `toml:"topic"`
+	Version    string   `toml:"version"`
+}
+
 type KafkaLogger struct {
 	Producer sarama.SyncProducer
 	Topic    string
