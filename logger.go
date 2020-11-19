@@ -140,7 +140,6 @@ func initKafka(c *LogConfig) error {
 	kf.Version = version
 
 	sarama.Logger = log.New(os.Stdout, "[sarama] ", log.LstdFlags)
-
 	p, err := sarama.NewSyncProducer(c.KafkaConfig.Address, kf)
 	if err != nil {
 		return errors.New(fmt.Sprintf("connect kafka failed: %+v\n", err))
