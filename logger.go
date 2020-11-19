@@ -70,16 +70,16 @@ func InitLoggerWithConfig(cfg LogConfig, location *time.Location) error {
 	if e := exists(cfg.Path); e != nil {
 		return e
 	} else if cfg.MaxSize <= 0 {
-		return errors.New("MaxSize must be large than zero")
+		return errors.New("maxSize must be large than zero")
 	}
 	// init kafka
 	if cfg.EnableKafka {
 		if cfg.KafkaConfig.Topic == "" {
-			return errors.New("Kafka Topic empty")
+			return errors.New("kafka Topic empty")
 		} else if len(cfg.KafkaConfig.Address) == 0 {
-			return errors.New("Kafka Address empty")
+			return errors.New("kafka Address empty")
 		} else if cfg.KafkaConfig.Ack > 1 || cfg.KafkaConfig.Ack < -1 {
-			return errors.New("Unknown kafka Ack flag")
+			return errors.New("unknown kafka Ack flag")
 		}
 		//
 		if err := initKafka(&cfg); err != nil {
