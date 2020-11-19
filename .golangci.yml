@@ -77,7 +77,6 @@ linters:
     - funlen
     - gomnd 
     - gosec
-    - nestif 
     - exhaustivestruct
     - godot
     - nlreturn
