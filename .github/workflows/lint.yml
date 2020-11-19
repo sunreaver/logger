@@ -11,6 +11,21 @@ on:
       - master
 
 jobs:
+  # Check if there any dirty change for go mod tidy
+  go-mod:
+    name: go mod the project using go mod tidy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.15
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Check go mod
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod
   golangci-lint:
     name: Lint the project using GolangCI Lint
     runs-on: ubuntu-latest
@@ -19,9 +34,6 @@ jobs:
         uses: actions/checkout@v2
       - name: Run golangci-lint
         uses: actions-contrib/golangci-lint@v1
-      - name: Run GolangCI-Lint
-        uses: ./
         with:
           config: .golangci.yml
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          args: run ./...
