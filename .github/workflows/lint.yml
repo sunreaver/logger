@@ -1,13 +1,31 @@
 name: Run linters
-on: [push]
+on:
+  push:
+    tags:
+      - v*
+    branches:
+      - master
+  pull_request:
 jobs:
-  golang-ci-lint:
+  # Check if there any dirty change for go mod tidy
+  go-mod:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.15
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Check go mod
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod
+  golangci-lint:
     name: Lint the project using GolangCI Lint
     runs-on: ubuntu-latest
     steps:
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v1
-
+      - uses: actions/checkout@v2
       - name: Run GolangCI-Lint
         uses: ./
         with:
