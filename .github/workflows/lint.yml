@@ -1,4 +1,5 @@
 name: Run linters
+
 on:
   push:
     tags:
@@ -6,9 +7,13 @@ on:
     branches:
       - master
   pull_request:
+    branches:
+      - master
+
 jobs:
   # Check if there any dirty change for go mod tidy
   go-mod:
+    name: go mod the project using go mod tidy
     runs-on: ubuntu-latest
     steps:
       - name: Install Go
@@ -26,6 +31,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Run golangci-lint
+        uses: actions-contrib/golangci-lint@v1
       - name: Run GolangCI-Lint
         uses: ./
         with:
