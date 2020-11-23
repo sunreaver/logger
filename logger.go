@@ -131,7 +131,7 @@ func initKafka(c *LogConfig) error {
 	// 随机的分区类型
 	kf.Producer.Partitioner = sarama.NewRandomPartitioner
 	// 是否等待成功和失败后的响应,只有上面的RequireAcks设置不是NoReponse这里才有用.
-	kf.Producer.Return.Successes = true
+	kf.Producer.Return.Successes = false
 	kf.Producer.Return.Errors = true
 	version, err := sarama.ParseKafkaVersion(c.KafkaConfig.Version)
 	if err != nil {
@@ -140,12 +140,24 @@ func initKafka(c *LogConfig) error {
 	kf.Version = version
 
 	sarama.Logger = log.New(os.Stdout, "[sarama] ", log.LstdFlags)
-	p, err := sarama.NewSyncProducer(c.KafkaConfig.Address, kf)
+	p, err := sarama.NewAsyncProducer(c.KafkaConfig.Address, kf)
 	if err != nil {
 		return errors.New(fmt.Sprintf("connect kafka failed: %+v\n", err))
 	}
 	kl.Topic = c.KafkaConfig.Topic
 	kl.Producer = p
+	kl.done = make(chan struct{})
+
+	go func() {
+		for {
+			select {
+			case <-kl.done:
+				return
+			case e := <-kl.Producer.Errors():
+				fmt.Println("[sarama] kafka producer err:", e.Error())
+			}
+		}
+	}()
 
 	return nil
 }

@@ -1,9 +1,8 @@
 package logger
 
 import (
-	"fmt"
-
 	"github.com/Shopify/sarama"
+	"github.com/pkg/errors"
 )
 
 type KafkaConfig struct {
@@ -17,20 +16,28 @@ type KafkaConfig struct {
 }
 
 type KafkaLogger struct {
-	Producer sarama.SyncProducer
+	Producer sarama.AsyncProducer
 	Topic    string
+	done     chan struct{}
 }
 
 func (lk *KafkaLogger) Write(p []byte) (n int, err error) {
 	msg := &sarama.ProducerMessage{}
 	msg.Topic = lk.Topic
 	msg.Value = sarama.ByteEncoder(p)
-	_, _, err = lk.Producer.SendMessage(msg)
-	if err != nil {
-		fmt.Println(err.Error())
-
-		return
+	select {
+	case <-lk.done:
+		lk.Producer.AsyncClose()
+		return 0, errors.New("kafka done")
+	case lk.Producer.Input() <- &sarama.ProducerMessage{
+		Topic: lk.Topic,
+		Value: sarama.ByteEncoder(p),
+	}:
 	}
 
-	return
+	return len(p), nil
+}
+
+func (lk *KafkaLogger) Stop() {
+	close(lk.done)
 }
