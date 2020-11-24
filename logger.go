@@ -87,7 +87,7 @@ func InitLoggerWithConfig(cfg LogConfig, location *time.Location) error {
 		}
 	}
 
-	config = cfg
+	loggers.cfg = cfg
 
 	// Fix time offset for Local
 	// lt := time.FixedZone("Asia/Shanghai", 8*60*60)
@@ -147,6 +147,7 @@ func initKafka(c *LogConfig) error {
 	kl.Topic = c.KafkaConfig.Topic
 	kl.Producer = p
 	kl.done = make(chan struct{})
+	kl.cfg = c.KafkaConfig
 
 	go func() {
 		for {

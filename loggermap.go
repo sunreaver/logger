@@ -19,14 +19,18 @@ type instance struct {
 type loggerMap struct {
 	lock      *sync.RWMutex
 	instances map[string]instance
+	cfg       LogConfig
 }
 
 var (
 	loggers = loggerMap{
 		new(sync.RWMutex),
 		make(map[string]instance),
+		LogConfig{},
 	}
-	config LogConfig
+
+	kafkaFilter     map[string]bool
+	kafkaFilterOnce sync.Once
 
 	// LoggerByDay 按照天来划分的logger.
 	LoggerByDay *zap.SugaredLogger
@@ -75,8 +79,8 @@ func (l *loggerMap) Get(name string) *zap.Logger {
 		var allCore []zapcore.Core
 
 		writer := &lumberjack.Logger{
-			Filename: path.Join(config.Path, name),
-			MaxSize:  config.MaxSize.AsInt(),
+			Filename: path.Join(l.cfg.Path, name),
+			MaxSize:  l.cfg.MaxSize.AsInt(),
 		}
 		ws := zapcore.AddSync(writer)
 		cfg := zapcore.EncoderConfig{
@@ -91,12 +95,12 @@ func (l *loggerMap) Get(name string) *zap.Logger {
 			EncodeDuration: zapcore.NanosDurationEncoder,
 		}
 		//
-		if config.EnableKafka {
+		if l.cfg.EnableKafka {
 			topicErrors := zapcore.AddSync(&kl)
 			kafkaEncoder := zapcore.NewJSONEncoder(cfg)
-			allCore = append(allCore, zapcore.NewCore(kafkaEncoder, topicErrors, config.Loglevel.toZapcoreLevel()))
+			allCore = append(allCore, zapcore.NewCore(kafkaEncoder, topicErrors, l.cfg.Loglevel.toZapcoreLevel()))
 		}
-		allCore = append(allCore, zapcore.NewCore(zapcore.NewJSONEncoder(cfg), ws, config.Loglevel.toZapcoreLevel()))
+		allCore = append(allCore, zapcore.NewCore(zapcore.NewJSONEncoder(cfg), ws, l.cfg.Loglevel.toZapcoreLevel()))
 		//
 		logger := zap.New(
 			zapcore.NewTee(allCore...),
