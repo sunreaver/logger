@@ -1,6 +1,8 @@
 package logger
 
 import (
+	"fmt"
+
 	"github.com/Shopify/sarama"
 	json "github.com/json-iterator/go"
 	"github.com/pkg/errors"
@@ -19,9 +21,6 @@ type KafkaConfig struct {
 
 // 此message是否输出到kafka
 func (kc *KafkaConfig) Filter(msg string) bool {
-	if kafkaFilter == nil {
-		return true
-	}
 	kafkaFilterOnce.Do(func() {
 		kafkaFilter = make(map[string]bool, len(kc.FilterMessage))
 		for _, fm := range kc.FilterMessage {
@@ -30,7 +29,11 @@ func (kc *KafkaConfig) Filter(msg string) bool {
 		if len(kafkaFilter) == 0 {
 			kafkaFilter = nil
 		}
+		fmt.Println("[logger] kafka logger filter:", kafkaFilter)
 	})
+	if kafkaFilter == nil {
+		return true
+	}
 
 	return kafkaFilter[msg]
 }
