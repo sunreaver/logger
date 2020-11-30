@@ -59,9 +59,6 @@ func (lk *KafkaLogger) Write(p []byte) (n int, err error) {
 		return len(p), nil
 	}
 
-	msg := &sarama.ProducerMessage{}
-	msg.Topic = lk.Topic
-	msg.Value = sarama.ByteEncoder(p)
 	select {
 	case <-lk.done:
 		lk.Producer.AsyncClose()
