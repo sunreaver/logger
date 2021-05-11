@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/Shopify/sarama"
@@ -23,8 +24,9 @@ type Logger interface {
 
 var (
 	// Empty empty logger.
-	Empty = &emptyLogger{}
-	kl    KafkaLogger
+	Empty        = &emptyLogger{}
+	kl           KafkaLogger
+	goroutineMap *sync.Map
 )
 
 type emptyLogger struct{}
@@ -63,7 +65,7 @@ type LogConfig struct {
 }
 
 // InitLoggerWithConfig 使用config初始化logger.
-func InitLoggerWithConfig(cfg LogConfig, location *time.Location) error {
+func InitLoggerWithConfig(cfg LogConfig, location *time.Location, gidMap *sync.Map) error {
 	if len(cfg.Path) == 0 {
 		return errors.New("path empty")
 	}
@@ -72,6 +74,7 @@ func InitLoggerWithConfig(cfg LogConfig, location *time.Location) error {
 	} else if cfg.MaxSize <= 0 {
 		return errors.New("maxSize must be large than zero")
 	}
+	goroutineMap = gidMap
 	// init kafka
 	if cfg.EnableKafka {
 		if cfg.KafkaConfig.Topic == "" {
@@ -167,22 +170,22 @@ func initKafka(c *LogConfig) error {
 // path 输出路径, 默认当前路径.
 // logLevel 日志级别: debug,info,warn.
 // location 日志文件名所属时区.
-func InitLoggerWithLevel(path string, logLevel LevelString, location *time.Location) error {
-	return InitLogger(path, logLevel.toLevel(), location)
+func InitLoggerWithLevel(path string, logLevel LevelString, location *time.Location, gidMap *sync.Map) error {
+	return InitLogger(path, logLevel.toLevel(), location, gidMap)
 }
 
 // InitLogger 初始化.
 // path 输出路径, 默认当前路径.
 // logLevel 日志级别.
 // location 日志文件名所属时区.
-func InitLogger(path string, logLevel Level, location *time.Location) error {
+func InitLogger(path string, logLevel Level, location *time.Location, gidMap *sync.Map) error {
 	return InitLoggerWithConfig(LogConfig{
 		Path:        path,
 		Loglevel:    logLevel.toLevelString(),
 		MaxSize:     1024,
 		EnableKafka: false,
 		KafkaConfig: KafkaConfig{},
-	}, location)
+	}, location, gidMap)
 }
 
 // GetLogger to get logger.
