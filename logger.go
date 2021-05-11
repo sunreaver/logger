@@ -3,6 +3,7 @@ package logger
 import (
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -19,7 +20,10 @@ type Logger interface {
 }
 
 // Empty empty logger.
-var Empty = &emptyLogger{}
+var (
+	Empty        = &emptyLogger{}
+	goroutineMap *sync.Map
+)
 
 type emptyLogger struct{}
 
@@ -53,7 +57,7 @@ type Config struct {
 }
 
 // InitLoggerWithConfig 使用config初始化logger.
-func InitLoggerWithConfig(cfg Config, location *time.Location) error {
+func InitLoggerWithConfig(cfg Config, location *time.Location, gid *sync.Map) error {
 	if len(cfg.Path) == 0 {
 		return errors.New("path empty")
 	}
@@ -63,6 +67,7 @@ func InitLoggerWithConfig(cfg Config, location *time.Location) error {
 		return errors.New("MaxSize must be large than zero")
 	}
 	config = cfg
+	goroutineMap = gid
 
 	// Fix time offset for Local
 	// lt := time.FixedZone("Asia/Shanghai", 8*60*60)
@@ -96,20 +101,20 @@ func InitLoggerWithConfig(cfg Config, location *time.Location) error {
 // path 输出路径, 默认当前路径.
 // logLevel 日志级别: debug,info,warn.
 // location 日志文件名所属时区.
-func InitLoggerWithLevel(path string, logLevel LevelString, location *time.Location) error {
-	return InitLogger(path, logLevel.toLevel(), location)
+func InitLoggerWithLevel(path string, logLevel LevelString, location *time.Location, gid *sync.Map) error {
+	return InitLogger(path, logLevel.toLevel(), location, gid)
 }
 
 // InitLogger 初始化.
 // path 输出路径, 默认当前路径.
 // logLevel 日志级别.
 // location 日志文件名所属时区.
-func InitLogger(path string, logLevel Level, location *time.Location) error {
+func InitLogger(path string, logLevel Level, location *time.Location, gid *sync.Map) error {
 	return InitLoggerWithConfig(Config{
 		Path:     path,
 		Loglevel: logLevel.toLevelString(),
 		MaxSize:  1024,
-	}, location)
+	}, location, gid)
 }
 
 // GetLogger to get logger.
