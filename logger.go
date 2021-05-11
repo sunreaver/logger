@@ -123,8 +123,8 @@ func GetLogger(name string) *zap.Logger {
 }
 
 // GetSugarLogger to get SugaredLogger.
-func GetSugarLogger(name string) *zap.SugaredLogger {
-	return GetLogger(name).Sugar()
+func GetSugarLogger(name string) Logger {
+	return &GIDContext{l: GetLogger(name).Sugar()}
 }
 
 // FlushAndCloseLogger flush and close logger.

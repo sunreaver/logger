@@ -28,7 +28,7 @@ var (
 	config Config
 
 	// LoggerByDay 按照天来划分的logger.
-	LoggerByDay *zap.SugaredLogger
+	LoggerByDay Logger
 )
 
 const (
