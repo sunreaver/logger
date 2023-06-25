@@ -1,6 +1,8 @@
 package logger
 
 import (
+	"io"
+	"os"
 	"path"
 	"sync"
 	"time"
@@ -12,7 +14,7 @@ import (
 
 type instance struct {
 	logger *zap.Logger
-	writer *lumberjack.Logger
+	writer io.Closer
 }
 
 type loggerMap struct {
@@ -71,11 +73,19 @@ func (l *loggerMap) Get(name string) *zap.Logger {
 	l.lock.RUnlock()
 
 	if !ok {
-		writer := &lumberjack.Logger{
-			Filename: path.Join(config.Path, name),
-			MaxSize:  config.MaxSize,
+		var ws zapcore.WriteSyncer
+		var closer io.Closer
+		if !config.StdOut {
+			lumb := &lumberjack.Logger{
+				Filename: path.Join(config.Path, name),
+				MaxSize:  config.MaxSize,
+			}
+			ws = zapcore.AddSync(lumb)
+			closer = lumb
+		} else {
+			ws = zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), zapcore.AddSync(os.Stderr))
+			closer = io.NopCloser(os.Stdout)
 		}
-		ws := zapcore.AddSync(writer)
 		cfg := zapcore.EncoderConfig{
 			TimeKey:        "time",
 			LevelKey:       "level",
@@ -94,7 +104,7 @@ func (l *loggerMap) Get(name string) *zap.Logger {
 		))
 		i = instance{
 			logger: logger,
-			writer: writer,
+			writer: closer,
 		}
 
 		l.lock.Lock()

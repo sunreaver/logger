@@ -1,7 +1,7 @@
 package logger
 
 import (
-	"fmt"
+	"log"
 	"os"
 	"sync"
 	"time"
@@ -50,21 +50,24 @@ func (e *emptyLogger) Panicw(msg string, _ ...interface{}) {
 
 // Config logger config.
 type Config struct {
-	Path     string
 	Loglevel LevelString
+	StdOut   bool // 如果true，则 path、maxsize失效
+	Path     string
 	// MaxSize 单文件最大存储，单位MB
 	MaxSize int
 }
 
 // InitLoggerWithConfig 使用config初始化logger.
 func InitLoggerWithConfig(cfg Config, location *time.Location, gid *sync.Map) error {
-	if len(cfg.Path) == 0 {
-		return errors.New("path empty")
-	}
-	if e := exists(cfg.Path); e != nil {
-		return e
-	} else if cfg.MaxSize <= 0 {
-		return errors.New("MaxSize must be large than zero")
+	if !cfg.StdOut {
+		if len(cfg.Path) == 0 {
+			return errors.New("path empty")
+		}
+		if e := exists(cfg.Path); e != nil {
+			return e
+		} else if cfg.MaxSize <= 0 {
+			return errors.New("MaxSize must be large than zero")
+		}
 	}
 	config = cfg
 	goroutineMap = gid
@@ -75,24 +78,26 @@ func InitLoggerWithConfig(cfg Config, location *time.Location, gid *sync.Map) er
 		time.Local = location
 	}
 
-	lastFile := time.Now().Format(loggerByDayFormat)
-	LoggerByDay = GetSugarLogger(lastFile)
-	go func() {
-		for {
-			now := time.Now()
-			if lastFile != now.Format(loggerByDayFormat) {
-				go func(name string) {
-					if e := loggers.Close(name); e != nil {
-						fmt.Println("writer.Close error", e.Error(), "File", name)
-					}
-				}(lastFile)
+	if !cfg.StdOut {
+		lastFile := time.Now().Format(loggerByDayFormat)
+		LoggerByDay = GetSugarLogger(lastFile)
+		go func() {
+			for {
+				now := time.Now()
+				if lastFile != now.Format(loggerByDayFormat) {
+					go func(name string) {
+						if e := loggers.Close(name); e != nil {
+							log.Println("writer.Close error", e.Error(), "File", name)
+						}
+					}(lastFile)
 
-				lastFile = now.Format(loggerByDayFormat)
-				LoggerByDay = GetSugarLogger(lastFile)
+					lastFile = now.Format(loggerByDayFormat)
+					LoggerByDay = GetSugarLogger(lastFile)
+				}
+				time.Sleep(ToEarlyMorningTimeDuration(now))
 			}
-			time.Sleep(ToEarlyMorningTimeDuration(now))
-		}
-	}()
+		}()
+	}
 
 	return nil
 }
