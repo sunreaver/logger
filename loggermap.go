@@ -83,7 +83,7 @@ func (l *loggerMap) Get(name string) *zap.Logger {
 			ws = zapcore.AddSync(lumb)
 			closer = lumb
 		} else {
-			ws = zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), zapcore.AddSync(os.Stderr))
+			ws = zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout))
 			closer = io.NopCloser(os.Stdout)
 		}
 		cfg := zapcore.EncoderConfig{
