@@ -2,18 +2,17 @@ package logger
 
 import (
 	"io"
+	"log/slog"
 	"os"
 	"path"
 	"sync"
 	"time"
 
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 )
 
 type instance struct {
-	logger *zap.Logger
+	logger *slog.Logger
 	writer io.Closer
 }
 
@@ -37,11 +36,6 @@ const (
 	loggerByDayFormat = "2006-01-02.log"
 )
 
-func localTimeEncoder(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
-	t = t.Local()
-	enc.AppendString(t.Format("2006-01-02 15:04:05"))
-}
-
 func (l *loggerMap) Close(name string) error {
 	l.lock.RLock()
 	_, ok := l.instances[name]
@@ -55,9 +49,6 @@ func (l *loggerMap) Close(name string) error {
 	defer l.lock.Unlock()
 	i, ok := l.instances[name]
 	if ok {
-		if e := i.logger.Sync(); e != nil {
-			return e
-		}
 		if e := i.writer.Close(); e != nil {
 			return e
 		}
@@ -67,43 +58,36 @@ func (l *loggerMap) Close(name string) error {
 	return nil
 }
 
-func (l *loggerMap) Get(name string) *zap.Logger {
+func (l *loggerMap) Get(name string) Logger {
 	l.lock.RLock()
 	i, ok := l.instances[name]
 	l.lock.RUnlock()
 
 	if !ok {
-		var ws zapcore.WriteSyncer
+		var ws *slog.Logger
 		var closer io.Closer
+		logcfg := &slog.HandlerOptions{
+			AddSource: config.AddSource,
+			Level:     config.Loglevel.toLevel(),
+		}
 		if !config.StdOut {
 			lumb := &lumberjack.Logger{
-				Filename: path.Join(config.Path, name),
-				MaxSize:  config.MaxSize,
+				Filename:  path.Join(config.Path, name),
+				MaxSize:   config.MaxSize,
+				LocalTime: true,
+
+				MaxBackups: config.MaxBackups,
+				MaxAge:     config.MaxAge,
+				Compress:   config.Compress,
 			}
-			ws = zapcore.AddSync(lumb)
+			ws = slog.New(slog.NewJSONHandler(lumb, logcfg))
 			closer = lumb
 		} else {
-			ws = zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout))
+			ws = slog.New(slog.NewJSONHandler(os.Stdout, logcfg))
 			closer = io.NopCloser(os.Stdout)
 		}
-		cfg := zapcore.EncoderConfig{
-			TimeKey:        "time",
-			LevelKey:       "level",
-			NameKey:        "logger",
-			CallerKey:      "caller",
-			MessageKey:     "message",
-			StacktraceKey:  "stacktrace",
-			EncodeLevel:    zapcore.LowercaseLevelEncoder,
-			EncodeTime:     localTimeEncoder,
-			EncodeDuration: zapcore.NanosDurationEncoder,
-		}
-		logger := zap.New(zapcore.NewCore(
-			zapcore.NewJSONEncoder(cfg),
-			ws,
-			config.Loglevel.toZapcoreLevel(),
-		))
 		i = instance{
-			logger: logger,
+			logger: ws,
 			writer: closer,
 		}
 
@@ -116,7 +100,9 @@ func (l *loggerMap) Get(name string) *zap.Logger {
 		l.lock.Unlock()
 	}
 
-	return i.logger
+	return &GIDContext{
+		l: i.logger,
+	}
 }
 
 // ToEarlyMorningTimeDuration will 计算当前到第二日凌晨的时间.

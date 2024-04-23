@@ -1,5 +1,6 @@
 # logger
-Packaging the go.uber.org/zap Logger
+
+Packaging the slog Logger
 
 ## 使用说明
 

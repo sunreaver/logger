@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 )
 
 // Logger Logger.
@@ -55,6 +54,16 @@ type Config struct {
 	Path     string
 	// MaxSize 单文件最大存储，单位MB
 	MaxSize int
+
+	// 最多备份数
+	MaxBackups int
+	// 备份最大保留天数
+	MaxAge int
+	// 是否压缩备份
+	Compress bool
+
+	// 是否添加调用函数信息
+	AddSource bool
 }
 
 // InitLoggerWithConfig 使用config初始化logger.
@@ -107,29 +116,26 @@ func InitLoggerWithConfig(cfg Config, location *time.Location, gid *sync.Map) er
 // logLevel 日志级别: debug,info,warn.
 // location 日志文件名所属时区.
 func InitLoggerWithLevel(path string, logLevel LevelString, location *time.Location, gid *sync.Map) error {
-	return InitLogger(path, logLevel.toLevel(), location, gid)
-}
-
-// InitLogger 初始化.
-// path 输出路径, 默认当前路径.
-// logLevel 日志级别.
-// location 日志文件名所属时区.
-func InitLogger(path string, logLevel Level, location *time.Location, gid *sync.Map) error {
 	return InitLoggerWithConfig(Config{
-		Path:     path,
-		Loglevel: logLevel.toLevelString(),
-		MaxSize:  1024,
+		Path:       path,
+		Loglevel:   logLevel,
+		MaxSize:    64,
+		MaxBackups: 0,
+		MaxAge:     0,
+		Compress:   true,
+		AddSource:  false,
+		StdOut:     false,
 	}, location, gid)
 }
 
 // GetLogger to get logger.
-func GetLogger(name string) *zap.Logger {
+func GetLogger(name string) Logger {
 	return loggers.Get(name)
 }
 
 // GetSugarLogger to get SugaredLogger.
 func GetSugarLogger(name string) Logger {
-	return &GIDContext{l: GetLogger(name).Sugar()}
+	return GetLogger(name)
 }
 
 // FlushAndCloseLogger flush and close logger.
