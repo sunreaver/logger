@@ -1,4 +1,4 @@
-module github.com/sunreaver/logger
+module github.com/sunreaver/logger/v3
 
 go 1.21
 
