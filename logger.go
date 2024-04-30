@@ -11,11 +11,10 @@ import (
 
 // Logger Logger.
 type Logger interface {
-	Debugw(msg string, kv ...interface{})
-	Infow(msg string, kv ...interface{})
-	Warnw(msg string, kv ...interface{})
-	Errorw(msg string, kv ...interface{})
-	Panicw(msg string, kv ...interface{})
+	Debugw() func(msg string, kv ...interface{})
+	Infow() func(msg string, kv ...interface{})
+	Warnw() func(msg string, kv ...interface{})
+	Errorw() func(msg string, kv ...interface{})
 }
 
 // Empty empty logger.
@@ -40,11 +39,6 @@ func (e *emptyLogger) Warnw(_ string, _ ...interface{}) {
 
 // Errorw Errorw.
 func (e *emptyLogger) Errorw(_ string, _ ...interface{}) {
-}
-
-// Panicw Panicw.
-func (e *emptyLogger) Panicw(msg string, _ ...interface{}) {
-	panic(msg)
 }
 
 // Config logger config.

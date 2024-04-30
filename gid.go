@@ -20,25 +20,20 @@ func (g *GIDContext) reqid() *slog.Logger {
 	return g.l
 }
 
-func (g *GIDContext) Debugw(msg string, kv ...interface{}) {
-	g.reqid().Debug(msg, kv...)
+func (g *GIDContext) Debugw() func(msg string, args ...any) {
+	return g.reqid().Debug
 }
 
-func (g *GIDContext) Infow(msg string, kv ...interface{}) {
-	g.reqid().Info(msg, kv...)
+func (g *GIDContext) Infow() func(msg string, args ...any) {
+	return g.reqid().Debug
 }
 
-func (g *GIDContext) Warnw(msg string, kv ...interface{}) {
-	g.reqid().Warn(msg, kv...)
+func (g *GIDContext) Warnw() func(msg string, args ...any) {
+	return g.reqid().Debug
 }
 
-func (g *GIDContext) Errorw(msg string, kv ...interface{}) {
-	g.reqid().Error(msg, kv...)
-}
-
-func (g *GIDContext) Panicw(msg string, kv ...interface{}) {
-	g.reqid().Error(msg, kv...)
-	panic(msg)
+func (g *GIDContext) Errorw() func(msg string, args ...any) {
+	return g.reqid().Error
 }
 
 func GetGID() uint64 {
