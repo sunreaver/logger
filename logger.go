@@ -11,10 +11,10 @@ import (
 
 // Logger Logger.
 type Logger interface {
-	Debugw() func(msg string, kv ...interface{})
-	Infow() func(msg string, kv ...interface{})
-	Warnw() func(msg string, kv ...interface{})
-	Errorw() func(msg string, kv ...interface{})
+	Debugw() func(msg string, kv ...any)
+	Infow() func(msg string, kv ...any)
+	Warnw() func(msg string, kv ...any)
+	Errorw() func(msg string, kv ...any)
 }
 
 // Empty empty logger.
@@ -26,19 +26,23 @@ var (
 type emptyLogger struct{}
 
 // Debugw Debugw.
-func (e *emptyLogger) Debugw(_ string, _ ...interface{}) {
+func (e *emptyLogger) Debugw() func(_ string, _ ...any) {
+	return func(_ string, _ ...any) {}
 }
 
 // Infow Infow.
-func (e *emptyLogger) Infow(_ string, _ ...interface{}) {
+func (e *emptyLogger) Infow() func(_ string, _ ...any) {
+	return func(_ string, _ ...any) {}
 }
 
 // Warnw Warnw.
-func (e *emptyLogger) Warnw(_ string, _ ...interface{}) {
+func (e *emptyLogger) Warnw() func(_ string, _ ...any) {
+	return func(_ string, _ ...any) {}
 }
 
 // Errorw Errorw.
-func (e *emptyLogger) Errorw(_ string, _ ...interface{}) {
+func (e *emptyLogger) Errorw() func(_ string, _ ...any) {
+	return func(_ string, _ ...any) {}
 }
 
 // Config logger config.
