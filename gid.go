@@ -25,11 +25,11 @@ func (g *GIDContext) Debugw() func(msg string, args ...any) {
 }
 
 func (g *GIDContext) Infow() func(msg string, args ...any) {
-	return g.reqid().Debug
+	return g.reqid().Info
 }
 
 func (g *GIDContext) Warnw() func(msg string, args ...any) {
-	return g.reqid().Debug
+	return g.reqid().Warn
 }
 
 func (g *GIDContext) Errorw() func(msg string, args ...any) {
