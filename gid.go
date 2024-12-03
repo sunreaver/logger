@@ -16,8 +16,13 @@ type GIDContext struct {
 
 func (g *GIDContext) reqid() *slog.Logger {
 	if goroutineMap != nil {
-		if reqid, ok := goroutineMap.Load(GetGID()); ok {
-			return g.l.With("req_id", reqid)
+		gid := GetGID()
+		if reqid, ok := goroutineMap.Load(gid); ok {
+			l := g.l.With(slog.Group("trace",
+				slog.Any("req_id", reqid),
+				slog.Uint64("gid", gid),
+			))
+			return l
 		}
 	}
 	return g.l

@@ -28,13 +28,13 @@ var (
 	}
 	config Config
 
-	// LoggerByDay 按照天来划分的logger.
-	LoggerByDay Logger
+	// // LoggerByDay 按照天来划分的logger.
+	// LoggerByDay Logger
 )
 
-const (
-	loggerByDayFormat = "2006-01-02.log"
-)
+// const (
+// 	loggerByDayFormat = "2006-01-02.log"
+// )
 
 func (l *loggerMap) Close(name string) error {
 	l.lock.RLock()

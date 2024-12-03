@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"log"
 	"os"
 	"sync"
 	"time"
@@ -85,26 +84,26 @@ func InitLoggerWithConfig(cfg Config, location *time.Location, gid *sync.Map) er
 		time.Local = location
 	}
 
-	if !cfg.StdOut {
-		lastFile := time.Now().Format(loggerByDayFormat)
-		LoggerByDay = GetSugarLogger(lastFile)
-		go func() {
-			for {
-				now := time.Now()
-				if lastFile != now.Format(loggerByDayFormat) {
-					go func(name string) {
-						if e := loggers.Close(name); e != nil {
-							log.Println("writer.Close error", e.Error(), "File", name)
-						}
-					}(lastFile)
+	// if !cfg.StdOut {
+	// 	lastFile := time.Now().Format(loggerByDayFormat)
+	// 	LoggerByDay = GetSugarLogger(lastFile)
+	// 	go func() {
+	// 		for {
+	// 			now := time.Now()
+	// 			if lastFile != now.Format(loggerByDayFormat) {
+	// 				go func(name string) {
+	// 					if e := loggers.Close(name); e != nil {
+	// 						log.Println("writer.Close error", e.Error(), "File", name)
+	// 					}
+	// 				}(lastFile)
 
-					lastFile = now.Format(loggerByDayFormat)
-					LoggerByDay = GetSugarLogger(lastFile)
-				}
-				time.Sleep(ToEarlyMorningTimeDuration(now))
-			}
-		}()
-	}
+	// 				lastFile = now.Format(loggerByDayFormat)
+	// 				LoggerByDay = GetSugarLogger(lastFile)
+	// 			}
+	// 			time.Sleep(ToEarlyMorningTimeDuration(now))
+	// 		}
+	// 	}()
+	// }
 
 	return nil
 }
