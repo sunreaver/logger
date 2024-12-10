@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"log"
 	"os"
 	"sync"
 	"time"
@@ -123,6 +124,27 @@ func InitLoggerWithLevel(path string, logLevel LevelString, location *time.Locat
 		AddSource:  false,
 		StdOut:     false,
 	}, location, gid)
+}
+
+// ResetAllInstance 函数用于重置所有日志实例。
+//
+// 参数：
+//
+//	cfg: 配置对象，包含日志配置信息。
+//
+// 说明：
+//
+//	遍历所有的日志实例，关闭每个实例的写入器，并从实例映射中删除。
+//	然后根据提供的配置对象重新创建新的日志实例，并添加到实例映射中。
+//	如果在关闭写入器时发生错误，则记录错误信息。
+func ResetAllInstance(cfg Config) {
+	loggers.Range(func(name string, i *instance) bool {
+		if e := i.writer.Close(); e != nil {
+			log.Println("[logger] writer.Close error", e.Error(), "file", name)
+		}
+		*i = *(newSlog(cfg, name))
+		return false
+	})
 }
 
 // GetLogger to get logger.

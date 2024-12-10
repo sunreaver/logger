@@ -18,13 +18,13 @@ type instance struct {
 
 type loggerMap struct {
 	lock      *sync.RWMutex
-	instances map[string]instance
+	instances map[string]*instance
 }
 
 var (
 	loggers = loggerMap{
 		new(sync.RWMutex),
-		make(map[string]instance),
+		make(map[string]*instance),
 	}
 	config Config
 
@@ -58,38 +58,34 @@ func (l *loggerMap) Close(name string) error {
 	return nil
 }
 
+// Range 遍历 loggerMap 中的所有实例，并对每个实例应用给定的函数 f。
+//
+// 参数：
+//
+//	f: 一个接受两个参数的函数，第一个参数是实例的名称（string 类型），第二个参数是实例本身（slog.Logger）。
+//	    如果函数 f 返回 false，则遍历将提前终止。
+//
+// 返回值：
+//
+//	无返回值。
+func (l *loggerMap) Range(f func(name string, i *instance) bool) {
+	l.lock.RLock()
+	defer l.lock.RUnlock()
+	for k, v := range l.instances {
+		if !f(k, v) {
+			break
+		}
+	}
+
+}
+
 func (l *loggerMap) Get(name string) Logger {
 	l.lock.RLock()
 	i, ok := l.instances[name]
 	l.lock.RUnlock()
 
 	if !ok {
-		var ws *slog.Logger
-		var closer io.Closer
-		logcfg := &slog.HandlerOptions{
-			AddSource: config.AddSource,
-			Level:     config.Loglevel.toLevel(),
-		}
-		if !config.StdOut {
-			lumb := &lumberjack.Logger{
-				Filename:  path.Join(config.Path, name),
-				MaxSize:   config.MaxSize,
-				LocalTime: true,
-
-				MaxBackups: config.MaxBackups,
-				MaxAge:     config.MaxAge,
-				Compress:   config.Compress,
-			}
-			ws = slog.New(slog.NewJSONHandler(lumb, logcfg))
-			closer = lumb
-		} else {
-			ws = slog.New(slog.NewJSONHandler(os.Stdout, logcfg))
-			closer = io.NopCloser(os.Stdout)
-		}
-		i = instance{
-			logger: ws,
-			writer: closer,
-		}
+		i = newSlog(config, name)
 
 		l.lock.Lock()
 		if tmp, ok := l.instances[name]; !ok {
@@ -102,6 +98,35 @@ func (l *loggerMap) Get(name string) Logger {
 
 	return &GIDContext{
 		l: i.logger,
+	}
+}
+
+func newSlog(cfg Config, name string) *instance {
+	var ws *slog.Logger
+	var closer io.Closer
+	logcfg := &slog.HandlerOptions{
+		AddSource: cfg.AddSource,
+		Level:     cfg.Loglevel.toLevel(),
+	}
+	if !cfg.StdOut {
+		lumb := &lumberjack.Logger{
+			Filename:  path.Join(cfg.Path, name),
+			MaxSize:   cfg.MaxSize,
+			LocalTime: true,
+
+			MaxBackups: cfg.MaxBackups,
+			MaxAge:     cfg.MaxAge,
+			Compress:   cfg.Compress,
+		}
+		ws = slog.New(slog.NewJSONHandler(lumb, logcfg))
+		closer = lumb
+	} else {
+		ws = slog.New(slog.NewJSONHandler(os.Stdout, logcfg))
+		closer = io.NopCloser(os.Stdout)
+	}
+	return &instance{
+		logger: ws,
+		writer: closer,
 	}
 }
 
