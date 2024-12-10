@@ -97,7 +97,7 @@ func (l *loggerMap) Get(name string) Logger {
 	}
 
 	return &GIDContext{
-		l: i.logger,
+		l: i,
 	}
 }
 

@@ -11,21 +11,21 @@ import (
 )
 
 type GIDContext struct {
-	l *slog.Logger
+	l *instance
 }
 
 func (g *GIDContext) reqid() *slog.Logger {
 	if goroutineMap != nil {
 		gid := GetGID()
 		if reqid, ok := goroutineMap.Load(gid); ok {
-			l := g.l.With(slog.Group("trace",
+			l := g.l.logger.With(slog.Group("trace",
 				slog.Any("req_id", reqid),
 				slog.Uint64("gid", gid),
 			))
 			return l
 		}
 	}
-	return g.l
+	return g.l.logger
 }
 
 func (g *GIDContext) Debugw() func(msg string, args ...any) {
